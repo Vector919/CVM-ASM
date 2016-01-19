@@ -22,7 +22,6 @@ def parse_instruction(ins, index):
 
 	if ins:
 		for char in ins:
-			print char, state
 			if (char ==" " or EOS(ins, char)) and state == 0: 
 				if state == 0:
 					state = 1
