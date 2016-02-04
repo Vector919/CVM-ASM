@@ -8,23 +8,26 @@ OPCODES = {
 	'HLT': "006",
 	'OUT': "007",
 	'JMPZ': "008",
-	'LODI': "009"
-
+	'LODI': "009",
+	'JNZ': "010"
 }
 
 STATE_INSTRUCTION = 0
 STATE_ARGUMENTS = 1
 STATE_COMMENTS = 2
 STATE_SYMBOL = 3
+STATE_DEF_SYMBOL = 4
 
 
 
 COMMENT_CHAR = ";"
+DEF_SYMBOL_CHAR = ":"
 
 class ParsingMachine(object):
 
 	def __init__(self):
-		self.syms = {}
+		self.symbols = {}
+		self.symbol_count = 0
 
 	def parse(self, code):
 		output = []
@@ -34,31 +37,50 @@ class ParsingMachine(object):
 			instruction = ""
 			buf = ""
 			args = []
+
 			while True:
 				if not input_stream:
 					if state == STATE_ARGUMENTS:
-						args.append(buf)
-						buf = ""
+						if buf not in self.symbols:
+							args.append(buf)
+						else:
+							args.append(self.symbols[buf])
 					if state == STATE_INSTRUCTION:
 						instruction = buf
-						buf = ""
+					buf = ""
 					break
 
 				current_input = input_stream.pop(0)
 				if state == STATE_COMMENTS:
 					continue
+
 				if current_input == " ":
 					if state == STATE_INSTRUCTION:
 						instruction = buf
-						buf = ""
 						state = STATE_ARGUMENTS
 
-					if state == STATE_ARGUMENTS:
-						args.append(buf)
-						buf = ""
+					elif state == STATE_ARGUMENTS:
+						if buf not in self.symbols:
+							args.append(buf)
+						else:
+							args.append(self.symbols[buf])
+
+					elif state == STATE_DEF_SYMBOL:
+						self.symbols[buf] = self.symbol_count
+						state = STATE_INSTRUCTION
+					else:
+						pass
+
+					self.symbol_count +=1
+					buf = ""
+					continue
 
 				if current_input == COMMENT_CHAR:
 					state = STATE_COMMENTS
+
+				if current_input == DEF_SYMBOL_CHAR:
+					state = STATE_DEF_SYMBOL
+					continue
 
 				buf+=current_input
 			if instruction:
